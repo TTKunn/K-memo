@@ -1,0 +1,342 @@
+# K-memo方案二详细实施计划
+
+**项目编号：** [002]
+**创建时间：** 2025-09-17
+**最后更新：** 2025-09-17
+**基于方案：** 方案二（平衡方案）
+**预计工作量：** 13-15天
+**技术风险：** 中等
+**当前状态：** 🚀 执行中 - 阶段一基础架构搭建
+**整体进度：** 1/4 阶段完成，任务1.1已完成 ✅
+
+## 技术方案总览
+
+### 核心技术选择
+- **数据存储：** SQLite数据库
+- **通知系统：** QSystemTrayIcon + 后期可扩展Windows Toast
+- **架构模式：** 标准MVC模式
+- **UI框架：** Qt Widgets + 自定义样式
+- **系统集成：** 完整托盘功能 + 全局快捷键
+
+### 关键依赖模块
+```cmake
+find_package(Qt6 REQUIRED COMPONENTS 
+    Widgets 
+    Sql 
+)
+target_link_libraries(k-memo PRIVATE 
+    Qt6::Widgets 
+    Qt6::Sql
+)
+```
+
+## 详细任务分解
+
+### 阶段一：基础架构搭建（3天）
+
+#### 任务1.1：项目结构重组和依赖配置
+**状态：** [x] 已完成
+**预计时间：** 1天
+**实际完成时间：** 2025-09-17
+**详细内容：**
+- ✅ 更新CMakeLists.txt，添加Qt6::Sql模块
+- ✅ 重新组织项目目录结构
+- ✅ 创建核心类的头文件框架
+- ✅ 配置编译环境和测试构建
+
+**验收标准：**
+- ✅ 项目能够成功编译
+- ✅ SQLite模块正确链接
+- ✅ 目录结构清晰合理
+
+**完成情况：**
+- CMakeLists.txt已更新，正确配置Qt6::Widgets和Qt6::Sql模块
+- 创建了完整的项目目录结构：models/、database/、managers/
+- 所有核心类的头文件已创建：Task、DatabaseManager、TaskModel、TrayManager、NotificationManager
+- 项目在VSCode环境下成功编译并启动运行
+- 使用cmake 3.30.5 + Visual Studio 2022编译器
+
+#### 任务1.2：数据模型设计与实现
+**状态：** [ ] 未开始  
+**预计时间：** 1天  
+**详细内容：**
+- 设计Task实体类（id, title, description, createTime, dueTime, priority, status, category, tags）
+- 实现TaskPriority和TaskStatus枚举
+- 创建Task类的序列化/反序列化方法
+- 编写Task类的验证逻辑
+
+**核心类设计：**
+```cpp
+enum class TaskPriority { Low = 1, Normal = 2, High = 3, Urgent = 4 };
+enum class TaskStatus { Pending = 0, InProgress = 1, Completed = 2, Cancelled = 3 };
+
+class Task {
+    QString id;
+    QString title;
+    QString description;
+    QDateTime createTime;
+    QDateTime dueTime;
+    TaskPriority priority;
+    TaskStatus status;
+    QString category;
+    QStringList tags;
+    bool reminderEnabled;
+    int reminderMinutes;
+};
+```
+
+**验收标准：**
+- Task类功能完整
+- 数据验证逻辑正确
+- 单元测试通过
+
+#### 任务1.3：SQLite数据库设计与实现
+**状态：** [ ] 未开始  
+**预计时间：** 1天  
+**详细内容：**
+- 设计数据库表结构（tasks表、task_tags表）
+- 实现DatabaseManager类
+- 实现基础CRUD操作（创建、读取、更新、删除任务）
+- 添加数据库版本管理和迁移机制
+
+**数据库表结构：**
+```sql
+-- 任务表
+CREATE TABLE tasks (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    due_time DATETIME,
+    priority INTEGER DEFAULT 2,
+    status INTEGER DEFAULT 0,
+    category TEXT DEFAULT 'default',
+    reminder_enabled BOOLEAN DEFAULT 0,
+    reminder_minutes INTEGER DEFAULT 15
+);
+
+-- 标签关联表
+CREATE TABLE task_tags (
+    task_id TEXT,
+    tag TEXT,
+    PRIMARY KEY(task_id, tag),
+    FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE
+);
+
+-- 配置表
+CREATE TABLE app_config (
+    key TEXT PRIMARY KEY,
+    value TEXT
+);
+```
+
+**验收标准：**
+- 数据库创建成功
+- CRUD操作正常
+- 数据迁移机制工作正常
+
+### 阶段二：核心功能实现（4天）
+
+#### 任务2.1：任务数据模型集成
+**状态：** [ ] 未开始  
+**预计时间：** 1天  
+**详细内容：**
+- 创建TaskModel类（继承QAbstractListModel）
+- 实现模型的数据接口（rowCount, data, setData等）
+- 集成DatabaseManager到TaskModel
+- 实现任务的增删改查操作
+- 添加数据变更信号
+
+**验收标准：**
+- TaskModel与数据库正确集成
+- 数据变更能够正确通知UI
+- 模型接口完整可用
+
+#### 任务2.2：主界面UI设计与实现
+**状态：** [ ] 未开始  
+**预计时间：** 1.5天  
+**详细内容：**
+- 重新设计kmemo.ui主界面布局
+- 创建任务列表视图（QListView + 自定义委托）
+- 实现TaskItemWidget自定义任务项显示
+- 创建基础的菜单栏和工具栏
+- 添加状态栏显示任务统计信息
+
+**UI布局设计：**
+- 左侧：分类树形视图
+- 中间：任务列表视图
+- 右侧：任务详情面板（可选）
+- 底部：状态栏
+- 顶部：菜单栏和工具栏
+
+**验收标准：**
+- 界面布局美观实用
+- 任务列表显示正确
+- 交互响应流畅
+
+#### 任务2.3：任务编辑功能实现
+**状态：** [ ] 未开始  
+**预计时间：** 1.5天  
+**详细内容：**
+- 创建TaskEditDialog任务编辑对话框
+- 实现任务标题、描述、截止时间编辑
+- 添加任务优先级选择控件
+- 实现任务状态切换功能
+- 连接UI与数据模型，实现数据绑定
+
+**验收标准：**
+- 任务编辑对话框功能完整
+- 数据验证正确
+- 与主界面集成良好
+
+### 阶段三：增强功能实现（4天）
+
+#### 任务3.1：分类和标签系统实现
+**状态：** [ ] 未开始  
+**预计时间：** 2天  
+**详细内容：**
+- 扩展数据库支持任务分类
+- 创建CategoryTreeWidget分类树控件
+- 实现分类的增删改功能
+- 实现TagWidget标签输入控件
+- 支持多标签选择和管理
+
+**验收标准：**
+- 分类系统功能完整
+- 标签系统工作正常
+- 与任务管理集成良好
+
+#### 任务3.2：优先级和状态管理优化
+**状态：** [ ] 未开始  
+**预计时间：** 1天  
+**详细内容：**
+- 优化优先级显示（颜色、图标）
+- 实现任务状态的快速切换
+- 添加批量操作功能
+- 优化任务列表的排序功能
+
+**验收标准：**
+- 优先级显示直观
+- 状态切换便捷
+- 排序功能正确
+
+#### 任务3.3：系统托盘功能实现
+**状态：** [ ] 未开始  
+**预计时间：** 1天  
+**详细内容：**
+- 创建TrayManager系统托盘管理器
+- 实现托盘图标和右键菜单
+- 添加托盘图标显示未完成任务数量
+- 实现双击托盘显示/隐藏主窗口
+- 支持最小化到托盘功能
+
+**验收标准：**
+- 托盘功能完整
+- 图标显示正确
+- 交互体验良好
+
+### 阶段四：系统集成功能（2天）
+
+#### 任务4.1：通知系统实现
+**状态：** [ ] 未开始  
+**预计时间：** 1天  
+**详细内容：**
+- 创建NotificationManager通知管理器
+- 实现基于QSystemTrayIcon的通知
+- 添加任务到期提醒功能
+- 实现可配置的提醒时间
+- 支持重复提醒功能
+
+**验收标准：**
+- 通知功能正常
+- 提醒时间准确
+- 配置选项完整
+
+#### 任务4.2：快捷键系统实现
+**状态：** [ ] 未开始  
+**预计时间：** 1天  
+**详细内容：**
+- 实现全局快捷键（显示/隐藏窗口）
+- 添加应用内快捷键（新建、删除等）
+- 创建快捷键配置界面
+- 支持自定义快捷键设置
+
+**验收标准：**
+- 全局快捷键工作正常
+- 应用内快捷键响应正确
+- 配置界面易用
+
+## 风险控制措施
+
+### 技术风险缓解
+1. **SQLite集成风险**
+   - 使用Qt内置SQLite驱动
+   - 实现数据库备份机制
+   - 添加数据完整性检查
+
+2. **全局快捷键风险**
+   - 优先实现应用内快捷键
+   - 全局快捷键作为增强功能
+   - 提供备用激活方式
+
+3. **性能风险**
+   - 实现分页加载
+   - 添加数据库索引
+   - 优化UI更新频率
+
+### 进度风险控制
+1. **严格按阶段交付**
+2. **每日进度检查**
+3. **关键节点里程碑验收**
+4. **预留缓冲时间**
+
+## 验收标准
+
+### 整体验收标准
+- [ ] 能够创建、编辑、删除任务
+- [ ] 任务数据能够持久化存储
+- [ ] 分类和标签功能正常工作
+- [ ] 优先级显示和排序正确
+- [ ] 系统托盘功能完整
+- [ ] 通知提醒准时有效
+- [ ] 快捷键响应正常
+- [ ] 应用稳定性良好
+
+### 性能标准
+- 应用启动时间 < 3秒
+- 任务列表加载时间 < 1秒
+- 内存占用 < 100MB
+- CPU占用率 < 5%（空闲时）
+
+---
+
+## 📊 项目进度跟踪
+
+### 已完成任务 ✅
+- **[2025-09-17]** 任务1.1：项目结构重组和依赖配置
+  - CMakeLists.txt配置完成（Qt6::Widgets + Qt6::Sql）
+  - 项目目录结构创建（models/、database/、managers/）
+  - 核心类头文件框架完成
+  - VSCode环境验证成功，项目可正常编译运行
+
+### 当前进行任务 🚀
+- **任务1.2：** 数据模型设计与实现（准备开始）
+
+### 待完成任务 📋
+- 任务1.3：SQLite数据库设计与实现
+- 阶段二：核心功能实现（4个任务）
+- 阶段三：增强功能实现（3个任务）
+- 阶段四：系统集成功能（2个任务）
+
+### 技术环境状态 🔧
+- ✅ **开发环境：** VSCode + cmake 3.30.5 + Visual Studio 2022
+- ✅ **编译状态：** 正常编译，应用可启动运行
+- ✅ **依赖配置：** Qt6::Widgets + Qt6::Sql 正确链接
+- ✅ **项目结构：** MVC架构框架已搭建
+
+---
+
+**计划制定完成时间：** 2025-09-17
+**计划执行开始时间：** 2025-09-17
+**预计项目完成时间：** 13-15天后（约2025-10-02）
+**实际开始时间：** 2025-09-17

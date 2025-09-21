@@ -1,0 +1,33 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/icons">
+        <!-- Priority Icons -->
+        <file>icons/priority/low.svg</file>
+        <file>icons/priority/normal.svg</file>
+        <file>icons/priority/high.svg</file>
+        <file>icons/priority/urgent.svg</file>
+
+        <!-- Status Icons -->
+        <file>icons/status/pending.svg</file>
+        <file>icons/status/inprogress.svg</file>
+        <file>icons/status/completed.svg</file>
+        <file>icons/status/cancelled.svg</file>
+
+        <!-- Action Icons -->
+        <file>icons/actions/add.svg</file>
+        <file>icons/actions/delete.svg</file>
+        <file>icons/actions/edit.svg</file>
+        <file>icons/actions/complete.svg</file>
+
+        <!-- Category Icons -->
+        <file>icons/categories/work.svg</file>
+        <file>icons/categories/personal.svg</file>
+        <file>icons/categories/study.svg</file>
+        <file>icons/categories/all.svg</file>
+
+        <!-- UI Icons -->
+        <file>icons/ui/theme-light.svg</file>
+        <file>icons/ui/theme-dark.svg</file>
+        <file>icons/ui/collapse.svg</file>
+    </qresource>
+</RCC>

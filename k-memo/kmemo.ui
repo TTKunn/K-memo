@@ -1,0 +1,978 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>kmemo</class>
+ <widget class="QMainWindow" name="kmemo">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1200</width>
+    <height>800</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>K-memo - 智能任务管理器</string>
+  </property>
+  <property name="styleSheet">
+   <string>QMainWindow {
+    background: #f8f9fa;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+QFrame {
+    border: none;
+}
+
+QScrollBar:vertical {
+    background: #f1f3f4;
+    width: 8px;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:vertical {
+    background: #dadce0;
+    border-radius: 4px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #bdc1c6;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    border: none;
+    background: none;
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;
+}
+   </string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="mainVerticalLayout">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QFrame" name="headerPanel">
+      <property name="frameShape">
+       <enum>QFrame::NoFrame</enum>
+      </property>
+      <property name="styleSheet">
+       <string>QFrame#headerPanel {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffffff, stop:1 #f8f9fa);
+    border: none;
+    border-bottom: 1px solid #e9ecef;
+    padding: 16px;
+}
+       </string>
+      </property>
+      <layout class="QHBoxLayout" name="headerLayout">
+       <property name="leftMargin">
+        <number>16</number>
+       </property>
+       <property name="topMargin">
+        <number>12</number>
+       </property>
+       <property name="rightMargin">
+        <number>16</number>
+       </property>
+       <property name="bottomMargin">
+        <number>12</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="appTitleLabel">
+         <property name="text">
+          <string>K-memo 任务管理器</string>
+         </property>
+         <property name="styleSheet">
+          <string>font-size: 18px; font-weight: 600; color: #212529;</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="searchLineEdit">
+         <property name="placeholderText">
+          <string>搜索任务...</string>
+         </property>
+         <property name="styleSheet">
+          <string>QLineEdit {
+    background: white;
+    border: 1px solid #ced4da;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 14px;
+    min-width: 200px;
+}
+QLineEdit:focus {
+    border-color: #4285f4;
+    box-shadow: 0 0 0 2px rgba(66,133,244,0.2);
+}
+          </string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="headerSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QPushButton" name="themeToggleBtn">
+         <property name="text">
+          <string>月亮</string>
+         </property>
+         <property name="toolTip">
+          <string>切换深色模式</string>
+         </property>
+         <property name="styleSheet">
+          <string>QPushButton {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 20px;
+    padding: 8px 12px;
+    font-size: 16px;
+    min-width: 40px;
+}
+QPushButton:hover {
+    background: #e9ecef;
+}
+          </string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QSplitter" name="mainHorizontalSplitter">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <widget class="QFrame" name="leftSidebarPanel">
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="styleSheet">
+        <string>QFrame#leftSidebarPanel {
+    background: #f8f9fa;
+    border: none;
+    border-right: 1px solid #e9ecef;
+}
+        </string>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>250</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>350</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <layout class="QVBoxLayout" name="leftSidebarLayout">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QFrame" name="quickAddFrame">
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="styleSheet">
+           <string>QFrame#quickAddFrame {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin: 8px;
+    padding: 12px;
+}
+           </string>
+          </property>
+          <layout class="QVBoxLayout" name="quickAddLayout">
+           <property name="leftMargin">
+            <number>12</number>
+           </property>
+           <property name="topMargin">
+            <number>12</number>
+           </property>
+           <property name="rightMargin">
+            <number>12</number>
+           </property>
+           <property name="bottomMargin">
+            <number>12</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="quickAddLabel">
+             <property name="text">
+              <string>快速添加</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 14px; font-weight: 600; color: #495057;</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="quickAddTaskBtn">
+             <property name="text">
+              <string>+ 新建任务</string>
+             </property>
+             <property name="styleSheet">
+              <string>QPushButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4285f4, stop:1 #1565c0);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 10px;
+    font-weight: 500;
+}
+QPushButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1976d2, stop:1 #1565c0);
+}
+              </string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QFrame" name="filtersFrame">
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="styleSheet">
+           <string>QFrame#filtersFrame {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin: 8px;
+    padding: 12px;
+}
+           </string>
+          </property>
+          <layout class="QVBoxLayout" name="filtersLayout">
+           <property name="leftMargin">
+            <number>12</number>
+           </property>
+           <property name="topMargin">
+            <number>12</number>
+           </property>
+           <property name="rightMargin">
+            <number>12</number>
+           </property>
+           <property name="bottomMargin">
+            <number>12</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="filtersLabel">
+             <property name="text">
+              <string>筛选器</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 14px; font-weight: 600; color: #495057;</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="categoryComboBox">
+             <property name="styleSheet">
+              <string>QComboBox {
+    background: white;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 13px;
+}
+QComboBox:focus {
+    border-color: #4285f4;
+}
+QComboBox::drop-down {
+    border: none;
+    width: 24px;
+}
+QComboBox::down-arrow {
+    image: none;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #5f6368;
+}
+              </string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="statusComboBox">
+             <property name="styleSheet">
+              <string>QComboBox {
+    background: white;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 13px;
+}
+QComboBox:focus {
+    border-color: #4285f4;
+}
+QComboBox::drop-down {
+    border: none;
+    width: 24px;
+}
+QComboBox::down-arrow {
+    image: none;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #5f6368;
+}
+              </string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QFrame" name="statsFrame">
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="styleSheet">
+           <string>QFrame#statsFrame {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin: 8px;
+    padding: 12px;
+}
+           </string>
+          </property>
+          <layout class="QVBoxLayout" name="statsLayout">
+           <property name="leftMargin">
+            <number>12</number>
+           </property>
+           <property name="topMargin">
+            <number>12</number>
+           </property>
+           <property name="rightMargin">
+            <number>12</number>
+           </property>
+           <property name="bottomMargin">
+            <number>12</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="statsLabel">
+             <property name="text">
+              <string>统计信息</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 14px; font-weight: 600; color: #495057;</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="taskCountLabel">
+             <property name="text">
+              <string>总计: 0</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 12px; color: #6c757d; margin: 2px 0px;</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="completedCountLabel">
+             <property name="text">
+              <string>已完成: 0</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 12px; color: #28a745; margin: 2px 0px;</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="pendingCountLabel">
+             <property name="text">
+              <string>待办: 0</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 12px; color: #ffc107; margin: 2px 0px;</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <spacer name="leftSidebarSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QFrame" name="centerTaskPanel">
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="styleSheet">
+        <string>QFrame#centerTaskPanel {
+    background: white;
+    border: none;
+}
+        </string>
+       </property>
+       <layout class="QVBoxLayout" name="centerTaskLayout">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QFrame" name="taskToolbarFrame">
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="styleSheet">
+           <string>QFrame#taskToolbarFrame {
+    background: #f8f9fa;
+    border: none;
+    border-bottom: 1px solid #e9ecef;
+    padding: 8px 16px;
+}
+           </string>
+          </property>
+          <layout class="QHBoxLayout" name="taskToolbarLayout">
+           <property name="leftMargin">
+            <number>16</number>
+           </property>
+           <property name="topMargin">
+            <number>8</number>
+           </property>
+           <property name="rightMargin">
+            <number>16</number>
+           </property>
+           <property name="bottomMargin">
+            <number>8</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="taskListTitleLabel">
+             <property name="text">
+              <string>任务列表</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 16px; font-weight: 600; color: #495057;</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="taskToolbarSpacer">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="deleteTaskBtn">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>删除</string>
+             </property>
+             <property name="styleSheet">
+              <string>QPushButton {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    margin-left: 4px;
+}
+QPushButton:disabled {
+    background: #6c757d;
+}
+QPushButton:hover:enabled {
+    background: #c82333;
+}
+              </string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="completeTaskBtn">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>完成</string>
+             </property>
+             <property name="styleSheet">
+              <string>QPushButton {
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    margin-left: 4px;
+}
+QPushButton:disabled {
+    background: #6c757d;
+}
+QPushButton:hover:enabled {
+    background: #218838;
+}
+              </string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QStackedWidget" name="contentStack">
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <widget class="QWidget" name="taskListPage">
+           <layout class="QVBoxLayout" name="taskListLayout">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QListView" name="taskListView">
+              <property name="alternatingRowColors">
+               <bool>false</bool>
+              </property>
+              <property name="selectionMode">
+               <enum>QAbstractItemView::ExtendedSelection</enum>
+              </property>
+              <property name="verticalScrollMode">
+               <enum>QAbstractItemView::ScrollPerPixel</enum>
+              </property>
+              <property name="uniformItemSizes">
+               <bool>false</bool>
+              </property>
+              <property name="contextMenuPolicy">
+               <enum>Qt::CustomContextMenu</enum>
+              </property>
+              <property name="styleSheet">
+               <string>QListView {
+    background: white;
+    border: none;
+    selection-background-color: transparent;
+}
+QListView::item {
+    border: none;
+    border-bottom: 1px solid #f1f3f4;
+    padding: 12px 16px;
+    margin: 0px;
+}
+QListView::item:selected {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #e3f2fd, stop:1 #e1f5fe);
+    border-left: 4px solid #4285f4;
+}
+QListView::item:hover {
+    background: #f8f9fa;
+}
+               </string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="emptyStatePage">
+           <layout class="QVBoxLayout" name="emptyStateLayout">
+            <property name="spacing">
+             <number>24</number>
+            </property>
+            <item>
+             <spacer name="emptyTopSpacer">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QLabel" name="emptyStateIcon">
+              <property name="text">
+               <string>📝</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="styleSheet">
+               <string>font-size: 64px; color: #dadce0; margin: 16px;</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="emptyStateTitle">
+              <property name="text">
+               <string>暂无任务</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="styleSheet">
+               <string>font-size: 20px; font-weight: 600; color: #5f6368; margin: 8px;</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="emptyStateDescription">
+              <property name="text">
+               <string>点击"新建任务"开始管理您的待办事项</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="styleSheet">
+               <string>font-size: 14px; color: #9aa0a6; margin: 4px 24px;</string>
+              </property>
+              <property name="wordWrap">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="emptyStateButton">
+              <property name="text">
+               <string>+ 创建第一个任务</string>
+              </property>
+              <property name="styleSheet">
+               <string>QPushButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4285f4, stop:1 #1565c0);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 32px;
+    font-weight: 500;
+    font-size: 14px;
+    max-width: 200px;
+}
+QPushButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1976d2, stop:1 #1565c0);
+}
+QPushButton:pressed {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1565c0, stop:1 #0d47a1);
+}
+               </string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="emptyBottomSpacer">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QFrame" name="rightDetailPanel">
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="styleSheet">
+        <string>QFrame#rightDetailPanel {
+    background: #f8f9fa;
+    border: none;
+    border-left: 1px solid #e9ecef;
+}
+        </string>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>250</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>400</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <layout class="QVBoxLayout" name="rightDetailLayout">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QFrame" name="detailHeaderFrame">
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="styleSheet">
+           <string>QFrame#detailHeaderFrame {
+    background: white;
+    border: none;
+    border-bottom: 1px solid #e9ecef;
+    padding: 12px 16px;
+}
+           </string>
+          </property>
+          <layout class="QHBoxLayout" name="detailHeaderLayout">
+           <property name="leftMargin">
+            <number>16</number>
+           </property>
+           <property name="topMargin">
+            <number>12</number>
+           </property>
+           <property name="rightMargin">
+            <number>16</number>
+           </property>
+           <property name="bottomMargin">
+            <number>12</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="detailTitleLabel">
+             <property name="text">
+              <string>任务详情</string>
+             </property>
+             <property name="styleSheet">
+              <string>font-size: 14px; font-weight: 600; color: #495057;</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="detailHeaderSpacer">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="collapseDetailBtn">
+             <property name="text">
+              <string>></string>
+             </property>
+             <property name="toolTip">
+              <string>折叠面板</string>
+             </property>
+             <property name="styleSheet">
+              <string>QPushButton {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+QPushButton:hover {
+    background: #e9ecef;
+}
+              </string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QScrollArea" name="detailScrollArea">
+          <property name="styleSheet">
+           <string>QScrollArea {
+    background: white;
+    border: none;
+}
+           </string>
+          </property>
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="detailContentWidget">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>248</width>
+             <height>726</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="detailContentLayout">
+            <item>
+             <widget class="QLabel" name="noSelectionLabel">
+              <property name="text">
+               <string>选择一个任务以查看详情</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="styleSheet">
+               <string>font-size: 14px; color: #6c757d; padding: 40px 20px;</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="detailContentSpacer">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1200</width>
+     <height>18</height>
+    </rect>
+   </property>
+  </widget>
+  <action name="actionAddTask">
+   <property name="text">
+    <string>新建任务</string>
+   </property>
+   <property name="toolTip">
+    <string>创建新任务</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="actionDeleteTask">
+   <property name="text">
+    <string>删除任务</string>
+   </property>
+   <property name="toolTip">
+    <string>删除选中的任务</string>
+   </property>
+   <property name="shortcut">
+    <string>Del</string>
+   </property>
+  </action>
+  <action name="actionCompleteTask">
+   <property name="text">
+    <string>完成任务</string>
+   </property>
+   <property name="toolTip">
+    <string>标记任务为已完成</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+D</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
