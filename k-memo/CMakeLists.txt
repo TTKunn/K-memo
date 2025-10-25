@@ -38,13 +38,13 @@ set(PROJECT_SOURCES
         IconManager.h
         IconManager.cpp
 
-        # Custom Widget Components
-        TaskDetailWidget.h
-        TaskDetailWidget.cpp
-        TaskStatsWidget.h
-        TaskStatsWidget.cpp
-        QuickAddWidget.h
-        QuickAddWidget.cpp
+        # Simple Widget Components (UI Refactoring)
+        widgets/simple/simpleaddwidget.h
+        widgets/simple/simpleaddwidget.cpp
+        widgets/simple/simpleaddwidget.ui
+        widgets/simple/simpletasklistwidget.h
+        widgets/simple/simpletasklistwidget.cpp
+        widgets/simple/simpletasklistwidget.ui
 )
 
 # Resource files

@@ -12,9 +12,6 @@
 #include <QStackedWidget>
 #include <QPushButton>
 #include "models/taskmodel.h"
-#include "TaskDetailWidget.h"
-#include "TaskStatsWidget.h"
-#include "QuickAddWidget.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -37,8 +34,8 @@ private slots:
     void onCompleteTaskClicked();
 
     // 筛选器槽函数
-    void onCategoryFilterChanged();
-    void onStatusFilterChanged();
+    void onCategoryFilterChanged(int index);
+    void onStatusFilterChanged(int index);
 
     // 任务列表槽函数
     void onTaskSelectionChanged();
@@ -54,12 +51,19 @@ private slots:
     void onToggleDetailPanel();
     void onSearchTextChanged(const QString &text);
 
-    // 自定义组件槽函数
-    void onTaskCreated(const Task &task);
-    void onTaskDetailRequested(const Task &task);
-    void onTaskDeleteRequested(const Task &task);
-    void onTaskFilterRequested(const QString &category, TaskStatus status);
-    void onShowAllTasksRequested();
+    // 自定义组件槽函数（暂时移除）
+    // void onTaskCreated(const Task &task);
+    // void onTaskDetailRequested(const Task &task);
+    // void onTaskDeleteRequested(const Task &task);
+    // void onTaskFilterRequested(const QString &category, TaskStatus status);
+    // void onShowAllTasksRequested();
+
+    // 新UI槽函数
+    void onAdvancedFeaturesClicked();
+    void onMenuClicked();
+    void onConfirmAddClicked();
+    void onCancelAddClicked();
+    void onSortTasksClicked();
 
 private:
     void setupUI();
@@ -69,6 +73,13 @@ private:
     void populateFilters();
     void integrateCustomComponents();
     void setupCustomComponentConnections();
+
+    // 新UI相关方法
+    void setupSimpleUI();
+    void setupSimpleConnections();
+    void updateTaskCount();
+    void addNewTask(const QString &title);
+    void setupFramelessWindow();
 
     // 内联编辑支持
     void enterInlineEditMode(const QModelIndex &index);
@@ -117,9 +128,9 @@ private:
     // 面板状态管理
     bool m_rightPanelCollapsed;
 
-    // 自定义组件
-    TaskDetailWidget *m_taskDetailWidget;
-    TaskStatsWidget *m_taskStatsWidget;
-    QuickAddWidget *m_quickAddWidget;
+    // 自定义组件（暂时移除）
+    // TaskDetailWidget *m_taskDetailWidget;
+    // TaskStatsWidget *m_taskStatsWidget;
+    // QuickAddWidget *m_quickAddWidget;
 };
 #endif // KMEMO_H

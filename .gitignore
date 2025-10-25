@@ -52,3 +52,75 @@ compile_commands.json
 *creator.user*
 
 *_qmlcache.qrc
+
+# ============================================
+# K-memo项目特定忽略规则
+# ============================================
+
+# 构建输出目录
+k-memo/build/
+k-memo/build-*/
+build/
+build-*/
+
+# CMake生成文件
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+*.cmake.in
+CTestTestfile.cmake
+_deps/
+
+# Qt生成文件
+ui_*.h
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+*.autouic
+*.moc
+
+# 用户数据文件（重要：不提交数据库）
+k-memo/data/*.db
+k-memo/data/*.db-wal
+k-memo/data/*.db-shm
+k-memo/data/backups/
+
+# 临时文件和备份
+*.backup
+*_old.*
+*.tmp
+*.temp
+*~
+
+# IDE配置（个人配置不提交）
+.vscode/
+.idea/
+*.user
+*.user.*
+
+# 日志文件
+*.log
+logs/
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 编译产物
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# 调试文件
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# 测试临时文件（仅保留长期测试文件）
+k-memo/test/temp_*
+k-memo/test/*.tmp

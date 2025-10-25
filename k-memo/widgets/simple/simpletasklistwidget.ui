@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SimpleTaskListWidget</class>
+ <widget class="QWidget" name="SimpleTaskListWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>360</width>
+    <height>400</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>任务列表</string>
+  </property>
+  <property name="styleSheet">
+   <string>QWidget {
+    background: white;
+    border-radius: 12px;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* 列表样式 */
+QListWidget {
+    background: transparent;
+    border: none;
+    outline: none;
+}
+
+QListWidget::item {
+    background: transparent;
+    border: none;
+    padding: 0px;
+    margin: 4px 0px;
+}
+
+/* 复选框样式 */
+QCheckBox {
+    font-size: 14px;
+    color: #3c4043;
+    padding: 8px;
+}
+
+QCheckBox::indicator {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #dadce0;
+    border-radius: 4px;
+    background: white;
+}
+
+QCheckBox::indicator:checked {
+    background: #4285f4;
+    border-color: #4285f4;
+    image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEzLjUgNEw2IDExLjVMMi41IDgiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo=);
+}
+
+QCheckBox::indicator:hover {
+    border-color: #4285f4;
+}
+
+/* 已完成任务的文本样式 */
+QCheckBox:checked {
+    color: #9aa0a6;
+    text-decoration: line-through;
+}
+
+/* 空状态样式 */
+.EmptyStateLabel {
+    font-size: 14px;
+    color: #9aa0a6;
+    padding: 40px 20px;
+}
+
+/* 优先级指示器 */
+.PriorityIndicator {
+    width: 4px;
+    border-radius: 2px;
+    margin-right: 8px;
+}
+
+.PriorityHigh {
+    background: #ea4335;
+}
+
+.PriorityNormal {
+    background: #4285f4;
+}
+
+.PriorityLow {
+    background: #34a853;
+}</string>
+  </property>
+  <layout class="QVBoxLayout" name="mainVerticalLayout">
+   <property name="spacing">
+    <number>8</number>
+   </property>
+   <property name="leftMargin">
+    <number>16</number>
+   </property>
+   <property name="topMargin">
+    <number>16</number>
+   </property>
+   <property name="rightMargin">
+    <number>16</number>
+   </property>
+   <property name="bottomMargin">
+    <number>16</number>
+   </property>
+
+   <!-- 列表标题和控制栏 -->
+   <item>
+    <layout class="QHBoxLayout" name="headerLayout">
+     <item>
+      <widget class="QLabel" name="titleLabel">
+       <property name="text">
+        <string>任务列表</string>
+       </property>
+       <property name="styleSheet">
+        <string>font-size: 16px; font-weight: 600; color: #3c4043;</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="headerSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="countLabel">
+       <property name="text">
+        <string>0 项</string>
+       </property>
+       <property name="styleSheet">
+        <string>font-size: 12px; color: #5f6368; margin-right: 8px;</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+
+   <!-- 任务列表 -->
+   <item>
+    <widget class="QStackedWidget" name="contentStack">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+
+     <!-- 任务列表页面 -->
+     <widget class="QWidget" name="taskListPage">
+      <layout class="QVBoxLayout" name="taskListLayout">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QListWidget" name="taskListWidget">
+         <property name="horizontalScrollBarPolicy">
+          <enum>Qt::ScrollBarAlwaysOff</enum>
+         </property>
+         <property name="alternatingRowColors">
+          <bool>false</bool>
+         </property>
+         <property name="selectionMode">
+          <enum>QAbstractItemView::NoSelection</enum>
+         </property>
+         <property name="verticalScrollMode">
+          <enum>QAbstractItemView::ScrollPerPixel</enum>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+
+     <!-- 空状态页面 -->
+     <widget class="QWidget" name="emptyStatePage">
+      <layout class="QVBoxLayout" name="emptyStateLayout">
+       <item>
+        <spacer name="emptyTopSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="emptyIcon">
+         <property name="text">
+          <string>📝</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="styleSheet">
+          <string>font-size: 48px; color: #dadce0; margin: 16px;</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="emptyTitle">
+         <property name="text">
+          <string>暂无任务</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="styleSheet">
+          <string>font-size: 16px; font-weight: 500; color: #5f6368; margin: 8px;</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="emptyDescription">
+         <property name="text">
+          <string>添加一些任务开始管理您的待办事项</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="styleSheet">
+          <string>font-size: 12px; color: #9aa0a6; margin: 4px 24px;</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="emptyBottomSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

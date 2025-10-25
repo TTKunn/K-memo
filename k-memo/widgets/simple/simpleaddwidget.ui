@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SimpleAddWidget</class>
+ <widget class="QWidget" name="SimpleAddWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>360</width>
+    <height>180</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>添加新任务</string>
+  </property>
+  <property name="styleSheet">
+   <string>QWidget {
+    background: white;
+    border-radius: 12px;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* 输入框样式 */
+QTextEdit {
+    background: white;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+}
+
+QTextEdit:focus {
+    border-color: #4285f4;
+}
+
+/* 按钮样式 */
+QPushButton {
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    padding: 8px 16px;
+}
+
+.PrimaryButton {
+    background: #4285f4;
+    color: white;
+}
+
+.PrimaryButton:hover {
+    background: #1976d2;
+}
+
+.SecondaryButton {
+    background: #f8f9fa;
+    color: #5f6368;
+    border: 1px solid #dadce0;
+}
+
+.SecondaryButton:hover {
+    background: #e8f0fe;
+}</string>
+  </property>
+  <layout class="QVBoxLayout" name="mainVerticalLayout">
+   <property name="spacing">
+    <number>12</number>
+   </property>
+   <property name="leftMargin">
+    <number>16</number>
+   </property>
+   <property name="topMargin">
+    <number>16</number>
+   </property>
+   <property name="rightMargin">
+    <number>16</number>
+   </property>
+   <property name="bottomMargin">
+    <number>16</number>
+   </property>
+
+   <!-- 标题 -->
+   <item>
+    <widget class="QLabel" name="titleLabel">
+     <property name="text">
+      <string>添加新待办</string>
+     </property>
+     <property name="styleSheet">
+      <string>font-size: 18px; font-weight: 600; color: #3c4043; margin-bottom: 8px;</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+
+   <!-- 任务内容输入 -->
+   <item>
+    <layout class="QVBoxLayout" name="inputLayout">
+     <item>
+      <widget class="QLabel" name="inputHintLabel">
+       <property name="text">
+        <string>请输入任务内容：</string>
+       </property>
+       <property name="styleSheet">
+        <string>font-size: 12px; color: #5f6368; margin-bottom: 4px;</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QTextEdit" name="taskContentTextEdit">
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>80</height>
+        </size>
+       </property>
+       <property name="placeholderText">
+        <string>例如：完成作业、买菜、开会...</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+
+   <!-- 按钮组 -->
+   <item>
+    <layout class="QHBoxLayout" name="buttonLayout">
+     <property name="spacing">
+      <number>8</number>
+     </property>
+     <item>
+      <spacer name="buttonSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="cancelButton">
+       <property name="text">
+        <string>取消</string>
+       </property>
+       <property name="styleSheet">
+        <string>QPushButton {
+    background: #f8f9fa;
+    color: #5f6368;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    padding: 8px 16px;
+    min-width: 60px;
+}
+QPushButton:hover {
+    background: #e8f0fe;
+}</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="confirmButton">
+       <property name="text">
+        <string>添加</string>
+       </property>
+       <property name="styleSheet">
+        <string>QPushButton {
+    background: #4285f4;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    padding: 8px 16px;
+    min-width: 60px;
+}
+QPushButton:hover {
+    background: #1976d2;
+}
+QPushButton:disabled {
+    background: #dadce0;
+    color: #9aa0a6;
+}</string>
+       </property>
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
