@@ -75,13 +75,13 @@ SQLite数据库
 ### CMake配置变更
 
 ```cmake
-# 新增Qt Quick模块
-find_package(Qt6 REQUIRED COMPONENTS 
-    Core Quick Qml QuickControls2 Sql
+# ⚠️ 关键：必须保留Widgets模块用于QSystemTrayIcon
+find_package(Qt6 REQUIRED COMPONENTS
+    Core Quick Qml QuickControls2 Sql Widgets
 )
 
 qt_add_qml_module(k-memo
-    URI KMemo
+    URI KMemo.UI
     VERSION 1.0
     QML_FILES
         qml/Main.qml
@@ -89,13 +89,32 @@ qt_add_qml_module(k-memo
         qml/components/cards/AddTaskCard.qml
         qml/components/cards/TaskListCard.qml
         qml/components/items/TaskItem.qml
+    RESOURCES
+        qml/styles/Theme.qml
+        qml/styles/Colors.qml
 )
 
-target_link_libraries(k-memo PRIVATE 
-    Qt6::Core Qt6::Quick Qt6::Qml 
-    Qt6::QuickControls2 Qt6::Sql
+# 保留resources.qrc中的图标资源
+qt_add_resources(k-memo "app_resources"
+    PREFIX "/"
+    FILES resources.qrc
+)
+
+target_link_libraries(k-memo PRIVATE
+    Qt6::Core
+    Qt6::Quick
+    Qt6::Qml
+    Qt6::QuickControls2
+    Qt6::Sql
+    Qt6::Widgets  # ← 必须保留，TrayManager依赖此模块
 )
 ```
+
+**重要说明：**
+- ✅ **必须保留Qt6::Widgets** - TrayManager使用QSystemTrayIcon需要此模块
+- ✅ **URI改为KMemo.UI** - 更规范的QML模块命名
+- ✅ **RESOURCES添加样式文件** - 包含Theme.qml和Colors.qml
+- ✅ **保留resources.qrc** - 现有SVG图标资源继续使用
 
 ---
 
@@ -114,16 +133,16 @@ K-memo项目采用**分层架构**设计，将代码按职责清晰分离为不�
 └─────────────────┬───────────────────────────────────────────┘
                   │ 属性绑定 / 信号槽 / Context Property
 ┌─────────────────┴───────────────────────────────────────────┐
-│                    业务逻辑层 (Business Logic Layer)        │
-│  路径: k-memo/models/, k-memo/managers/                    │
-│  职责: 数据模型、业务规则、系统管理                        │
+│                    业务逻辑层 (Business Logic Layer)          │
+│  路径: k-memo/models/, k-memo/managers/                      │
+│  职责: 数据模型、业务规则、系统管理                             │
 │  技术: C++ + Qt Core                                        │
 └─────────────────┬───────────────────────────────────────────┘
                   │ SQL操作 / 数据库API
 ┌─────────────────┴───────────────────────────────────────────┐
-│                    数据访问层 (Data Access Layer)           │
+│                    数据访问层 (Data Access Layer)            │
 │  路径: k-memo/database/                                     │
-│  职责: 数据库操作、SQL封装、事务管理                       │
+│  职责: 数据库操作、SQL封装、事务管理                            │
 │  技术: Qt::Sql + SQLite                                     │
 └─────────────────┬───────────────────────────────────────────┘
                   │ SQL查询 / 数据持久化
@@ -134,6 +153,7 @@ K-memo项目采用**分层架构**设计，将代码按职责清晰分离为不�
 │  技术: SQLite文件系统                                       │
 └─────────────────────────────────────────────────────────────┘
 ```
+
 
 ---
 
@@ -364,8 +384,24 @@ icons/
 ```qml
 Image {
     source: "qrc:/icons/actions/add.svg"
-    sourceSize: Qt.size(24, 24)
+    sourceSize: Qt.size(24, 24)  // ← 必须设置sourceSize优化性能
 }
+```
+
+**资源文件组织（resources.qrc）：**
+```xml
+<RCC>
+    <qresource prefix="/">
+        <file>icons/actions/add.svg</file>
+        <file>icons/actions/delete.svg</file>
+        <file>icons/actions/edit.svg</file>
+        <file>icons/priority/low.svg</file>
+        <file>icons/priority/normal.svg</file>
+        <file>icons/priority/high.svg</file>
+        <file>icons/priority/urgent.svg</file>
+        <!-- 其他图标... -->
+    </qresource>
+</RCC>
 ```
 
 ---
@@ -581,68 +617,365 @@ QML引擎 (用于操作窗口)
 
 ---
 
-## 四、详细实施计划（10个任务）
+### 3.7 QML模块化最佳实践
+
+#### qmldir模块定义文件
+
+**创建 `qml/qmldir` 文件：**
+
+```
+# K-memo QML模块定义
+module KMemo.UI
+
+# 单例对象（全局唯一）
+singleton Theme 1.0 styles/Theme.qml
+singleton Colors 1.0 styles/Colors.qml
+
+# 可复用组件（卡片类）
+StatsCard 1.0 components/cards/StatsCard.qml
+AddTaskCard 1.0 components/cards/AddTaskCard.qml
+TaskListCard 1.0 components/cards/TaskListCard.qml
+
+# 可复用组件（列表项）
+TaskItem 1.0 components/items/TaskItem.qml
+
+# 对话框组件
+TaskDetailDialog 1.0 dialogs/TaskDetailDialog.qml
+```
+
+---
+
+#### Theme单例实现
+
+**创建 `qml/styles/Theme.qml`（单例模式）：**
+
+```qml
+pragma Singleton
+import QtQuick
+
+QtObject {
+    id: theme
+
+    // 主题状态
+    property bool isDark: false
+
+    // 颜色定义
+    readonly property color primaryColor: isDark ? "#1976D2" : "#2196F3"
+    readonly property color accentColor: isDark ? "#FF4081" : "#FF5722"
+    readonly property color backgroundColor: isDark ? "#303030" : "#FAFAFA"
+    readonly property color surfaceColor: isDark ? "#424242" : "#FFFFFF"
+    readonly property color textColor: isDark ? "#FFFFFF" : "#212121"
+    readonly property color secondaryTextColor: isDark ? "#B0B0B0" : "#757575"
+
+    // 优先级颜色
+    readonly property color priorityLow: "#4CAF50"      // 绿色
+    readonly property color priorityNormal: "#2196F3"   // 蓝色
+    readonly property color priorityHigh: "#FF9800"     // 橙色
+    readonly property color priorityUrgent: "#F44336"   // 红色
+
+    // 状态颜色
+    readonly property color statusPending: "#9E9E9E"     // 灰色
+    readonly property color statusInProgress: "#2196F3"  // 蓝色
+    readonly property color statusCompleted: "#4CAF50"   // 绿色
+    readonly property color statusCancelled: "#F44336"   // 红色
+
+    // 尺寸定义
+    readonly property int spacingSmall: 4
+    readonly property int spacingMedium: 8
+    readonly property int spacingLarge: 16
+    readonly property int spacingXLarge: 24
+
+    readonly property int radiusSmall: 4
+    readonly property int radiusMedium: 8
+    readonly property int radiusLarge: 12
+
+    readonly property int fontSizeSmall: 12
+    readonly property int fontSizeMedium: 14
+    readonly property int fontSizeLarge: 18
+    readonly property int fontSizeXLarge: 24
+
+    // 动画时长
+    readonly property int animationFast: 150
+    readonly property int animationNormal: 200
+    readonly property int animationSlow: 300
+
+    // 根据优先级获取颜色
+    function getPriorityColor(priority) {
+        switch(priority) {
+            case 1: return priorityLow
+            case 2: return priorityNormal
+            case 3: return priorityHigh
+            case 4: return priorityUrgent
+            default: return priorityNormal
+        }
+    }
+
+    // 根据状态获取颜色
+    function getStatusColor(status) {
+        switch(status) {
+            case 0: return statusPending
+            case 1: return statusInProgress
+            case 2: return statusCompleted
+            case 3: return statusCancelled
+            default: return statusPending
+        }
+    }
+
+    // 切换主题
+    function toggleTheme() {
+        isDark = !isDark
+    }
+}
+```
+
+---
+
+#### 在CMakeLists.txt中配置QML模块
+
+```cmake
+# 定义QML模块
+qt_add_qml_module(k-memo
+    URI KMemo.UI
+    VERSION 1.0
+    QML_FILES
+        qml/Main.qml
+        qml/components/cards/StatsCard.qml
+        qml/components/cards/AddTaskCard.qml
+        qml/components/cards/TaskListCard.qml
+        qml/components/items/TaskItem.qml
+        qml/dialogs/TaskDetailDialog.qml
+    RESOURCES
+        qml/styles/Theme.qml
+        qml/styles/Colors.qml
+    NO_PLUGIN  # 不生成C++插件，仅QML模块
+)
+```
+
+---
+
+#### 在QML中导入和使用模块
+
+```qml
+import QtQuick
+import QtQuick.Controls.Material
+import KMemo.UI 1.0  // ← 导入自定义模块
+import KMemo.Enums 1.0  // ← 导入枚举命名空间
+
+ApplicationWindow {
+    id: mainWindow
+
+    // 使用Theme单例
+    Material.theme: Theme.isDark ? Material.Dark : Material.Light
+    Material.primary: Theme.primaryColor
+
+    Rectangle {
+        // 使用主题颜色
+        color: Theme.backgroundColor
+        radius: Theme.radiusMedium
+
+        Text {
+            text: "待办任务"
+            color: Theme.textColor
+            font.pixelSize: Theme.fontSizeLarge
+        }
+
+        // 使用优先级颜色
+        Rectangle {
+            color: Theme.getPriorityColor(TaskEnums.Urgent)
+            width: 4
+            height: parent.height
+        }
+    }
+
+    // 使用自定义组件（无需指定路径）
+    StatsCard {
+        totalCount: taskModel.getTaskCount()
+    }
+
+    // 主题切换按钮
+    Button {
+        text: Theme.isDark ? "浅色模式" : "深色模式"
+        onClicked: Theme.toggleTheme()
+    }
+}
+```
+
+---
+
+#### 模块化的优势
+
+| 优势 | 说明 |
+|-----|------|
+| **代码复用** | 组件可在多个地方使用，无需重复代码 |
+| **集中管理** | 主题、颜色、尺寸集中在Theme单例，统一修改 |
+| **类型安全** | qmldir提供类型检查，减少运行时错误 |
+| **自动补全** | Qt Creator可识别模块，提供代码补全 |
+| **版本控制** | 模块版本号便于管理组件兼容性 |
+| **性能优化** | QML引擎可以缓存和优化模块 |
+
+---
+
+## 四、详细实施计划（11个任务）
 
 ### 任务1：Qt Quick环境配置与CMake重构（1天）
-- 修改CMakeLists.txt添加Qt Quick模块
-- 创建qml/目录结构
-- 配置Qt Creator的QML支持
+- ✅ 修改CMakeLists.txt添加Qt6 Quick/Qml/QuickControls2模块
+- ✅ **保留Qt6::Widgets模块**（系统托盘必需）
+- ✅ 配置qt_add_qml_module定义KMemo.UI模块
+- ✅ 配置qt_add_resources保留现有SVG图标
+- 创建qml/目录结构（components/cards, components/items, styles, dialogs）
+- 配置Qt Creator的QML支持和代码补全
 
-### 任务2：main.cpp重构与QML引擎初始化（1-2天）
-- 将QApplication改为QGuiApplication
+---
+
+### 任务2：C++后端适配与枚举暴露（2天）
+
+**2.1 创建TaskEnums命名空间（0.5天）**
+- 创建models/taskenums.h文件
+- 使用Q_NAMESPACE和Q_ENUM_NS暴露枚举给QML
+- 在CMakeLists.txt中添加taskenums.h
+
+**2.2 适配TrayManager（1天）**
+- 修改构造函数接受`QQmlApplicationEngine*`参数
+- 添加Q_INVOKABLE方法（showMainWindow, hideMainWindow, toggleMainWindow等）
+- 实现通过QMetaObject::invokeMethod控制QML窗口
+- 修改createContextMenu托盘菜单
+
+**2.3 适配NotificationManager（0.5天）**
+- 添加Q_INVOKABLE showNotification方法
+- 确保与TrayManager的集成正常
+
+---
+
+### 任务3：main.cpp重构与QML引擎初始化（1天）
+- ⚠️ **保持使用QApplication**（不能改为QGuiApplication）
 - 初始化QQmlApplicationEngine
-- 注册C++类型到QML
-- 暴露TaskModel到QML上下文
+- 注册TaskEnums命名空间（qmlRegisterUnclassifiedModule）
+- 创建TaskModel、TrayManager、NotificationManager单例
+- 设置Context Property暴露C++对象到QML
+- 加载Main.qml并处理错误
 
-### 任务3：Main.qml主窗口框架与Material主题配置（1天）
-- 实现ApplicationWindow框架
-- 配置Material Design主题
-- 实现frameless window效果
-- 创建三卡片垂直布局
+---
 
-### 任务4：StatsCard统计卡片组件实现（1天）
-- 显示任务数量
-- 高级功能按钮和菜单按钮
-- 与TaskModel数据绑定
+### 任务4：QML模块化基础架构（1天）
 
-### 任务5：AddTaskCard添加任务卡片组件实现（1-2天）
-- 任务输入框（TextArea）
-- 确认/取消按钮
-- 输入验证逻辑
-- 与TaskModel集成
+**4.1 创建Theme单例（0.5天）**
+- 创建qml/styles/Theme.qml（pragma Singleton）
+- 定义颜色、尺寸、动画时长等主题属性
+- 实现getPriorityColor()和getStatusColor()辅助函数
+- 实现toggleTheme()主题切换
 
-### 任务6：TaskListCard和TaskItem任务列表组件实现（2天）
-- ListView实现
-- TaskItem委托设计
-- 复选框交互
-- 优先级颜色指示
-- 完成划线动画
+**4.2 创建qmldir模块定义（0.5天）**
+- 创建qml/qmldir文件
+- 注册Theme和Colors单例
+- 注册所有组件（StatsCard, AddTaskCard, TaskListCard, TaskItem）
 
-### 任务7：TrayManager和NotificationManager的QML接口适配（1-2天）
-- 为TrayManager添加Q_INVOKABLE方法
-- 实现窗口显示/隐藏控制
-- 托盘图标更新
-- 通知功能QML集成
+---
 
-### 任务8：Material主题系统和动画效果优化（2天）
-- 创建Theme.qml单例
-- 实现深色/浅色主题切换
-- 添加所有动画效果（点击、过渡、列表项）
-- 优化到60FPS
+### 任务5：Main.qml主窗口框架实现（1-2天）
+- 实现ApplicationWindow基础框架
+- 配置Material Design主题（绑定Theme单例）
+- 实现无边框窗口（flags: Qt.Window | Qt.FramelessWindowHint）
+- 实现自定义标题栏ToolBar（拖动窗口、最小化、隐藏按钮）
+- 实现窗口拖动逻辑（MouseArea计算坐标偏移）
+- 实现圆角阴影效果（DropShadow）
+- 处理onClosing事件（隐藏到托盘而不是退出）
+- 创建三卡片垂直布局（ColumnLayout）
 
-### 任务9：功能测试、性能优化与Bug修复（2天）
-- 全面功能测试
-- 性能测试（启动时间、内存、帧率）
-- ListView性能优化
-- Bug修复
+---
 
-### 任务10：项目文档编写与技术方案归档（1-2天）
-- 编写完整技术方案文档
-- 更新功能模块文档
-- 创建QML开发规范文档
-- 更新CLAUDE.md和README.md
+### 任务6：StatsCard统计卡片组件实现（1天）
+- 创建components/cards/StatsCard.qml
+- 显示任务总数、已完成、待办数量
+- 数据绑定到taskModel（getTaskCount, getCompletedCount等）
+- 添加高级功能按钮和菜单按钮
+- 实现卡片样式（Material风格）
 
-**总计：15-20天**
+---
+
+### 任务7：AddTaskCard添加任务卡片组件实现（1天）
+- 创建components/cards/AddTaskCard.qml
+- 实现TextField标题输入框
+- 实现TextArea描述输入框（可选）
+- 添加确认/取消按钮
+- 实现输入验证逻辑（title不能为空）
+- 定义taskSubmitted信号与TaskModel集成
+- 添加输入动画和焦点管理
+
+---
+
+### 任务8：TaskListCard和TaskItem任务列表组件实现（2天）
+
+**8.1 TaskItem委托组件（1天）**
+- 创建components/items/TaskItem.qml
+- 使用required property优化性能
+- 实现CheckBox完成状态切换
+- 显示任务标题、描述、优先级
+- 优先级颜色指示条（使用Theme.getPriorityColor）
+- 完成任务划线动画（Behavior on opacity）
+- 添加hover和点击效果
+
+**8.2 TaskListCard列表容器（1天）**
+- 创建components/cards/TaskListCard.qml
+- 实现ListView性能优化（cacheBuffer, reuseItems, clip）
+- 配置add/remove/displaced动画
+- 处理空状态显示
+- 实现列表滚动条样式
+
+---
+
+### 任务9：系统托盘和通知集成测试（1天）
+- 测试托盘图标显示和菜单功能
+- 测试窗口显示/隐藏/切换逻辑
+- 测试任务数量更新到托盘tooltip
+- 测试通知功能（任务添加、完成等）
+- 测试双击托盘图标切换窗口
+- 测试退出应用流程
+
+---
+
+### 任务10：性能优化与动画完善（2天）
+
+**10.1 性能优化（1天）**
+- ListView性能测试（加载1000任务）
+- 图标加载优化（确保所有Image设置sourceSize）
+- 复杂组件Loader延迟加载
+- 使用QML Profiler检测性能瓶颈
+- 内存占用和启动时间优化
+
+**10.2 动画效果完善（1天）**
+- 完善所有按钮点击动画
+- 完善卡片展开/折叠过渡
+- 完善列表项添加/删除动画
+- 实现主题切换过渡动画
+- 确保60FPS流畅度
+
+---
+
+### 任务11：全面测试、Bug修复与文档更新（2天）
+
+**11.1 功能测试（1天）**
+- 所有CRUD操作测试
+- 数据持久化测试
+- 系统托盘功能测试
+- 主题切换测试
+- 边界条件测试（空数据、大量数据）
+
+**11.2 文档更新（1天）**
+- 更新[000]功能模块文档.md
+- 更新CLAUDE.md开发指南
+- 更新README.md项目说明
+- 创建QML开发规范文档（可选）
+
+---
+
+**总计：16-20天**
+
+**关键里程碑：**
+- Day 3: C++后端适配完成，可以开始QML开发
+- Day 7: 主窗口和基础组件完成，可以看到界面
+- Day 12: 所有组件完成，可以执行基本任务管理
+- Day 16: 性能优化完成，通过验收测试
+- Day 18-20: 文档完善，项目交付
 
 ---
 
@@ -675,33 +1008,514 @@ ListView {
 }
 ```
 
-### 5.2 Main.qml主窗口实现
+---
+
+### 5.2 枚举类型暴露到QML
+
+**步骤1：创建TaskEnums命名空间文件**
+
+创建新文件 `models/taskenums.h`：
+
+```cpp
+#ifndef TASKENUMS_H
+#define TASKENUMS_H
+
+#include <QObject>
+
+// 使用Q_NAMESPACE将枚举暴露给QML
+namespace TaskEnums {
+    Q_NAMESPACE
+
+    // 任务优先级枚举
+    enum TaskPriority {
+        Low = 1,
+        Normal = 2,
+        High = 3,
+        Urgent = 4
+    };
+    Q_ENUM_NS(TaskPriority)
+
+    // 任务状态枚举
+    enum TaskStatus {
+        Pending = 0,
+        InProgress = 1,
+        Completed = 2,
+        Cancelled = 3
+    };
+    Q_ENUM_NS(TaskStatus)
+}
+
+#endif // TASKENUMS_H
+```
+
+**步骤2：在main.cpp中注册命名空间**
+
+```cpp
+#include "models/taskenums.h"
+
+int main(int argc, char *argv[])
+{
+    // 注册枚举命名空间到QML
+    qmlRegisterUnclassifiedModule("KMemo.Enums", 1, 0);
+
+    // ... 其他初始化代码
+}
+```
+
+**步骤3：在QML中使用枚举**
+
+```qml
+import KMemo.Enums 1.0
+
+Rectangle {
+    // 使用枚举值
+    property int taskPriority: TaskEnums.High
+    property int taskStatus: TaskEnums.Pending
+
+    // 条件判断
+    color: taskPriority === TaskEnums.Urgent ? "red" : "blue"
+}
+```
+
+---
+
+### 5.3 main.cpp完整实现方案
+
+```cpp
+#include <QApplication>  // ⚠️ 必须用QApplication，不能用QGuiApplication
+#include <QQmlApplicationEngine>
+#include <QQmlContext>
+#include <QIcon>
+
+// Models
+#include "models/taskmodel.h"
+#include "models/taskenums.h"
+
+// Managers
+#include "managers/traymanager.h"
+#include "managers/notificationmanager.h"
+
+// Database
+#include "database/databasemanager.h"
+
+int main(int argc, char *argv[])
+{
+    // ⚠️ 关键：必须使用QApplication而不是QGuiApplication
+    // 原因：QSystemTrayIcon（系统托盘）需要Widgets模块支持
+    QApplication app(argc, argv);
+
+    // 设置应用程序信息
+    app.setApplicationName("K-memo");
+    app.setOrganizationName("K-memo");
+    app.setApplicationVersion("2.0.0");
+
+    // 1. 注册枚举命名空间到QML
+    qmlRegisterUnclassifiedModule("KMemo.Enums", 1, 0);
+
+    // 2. 初始化数据库
+    DatabaseManager* db = DatabaseManager::instance();
+    if (!db->initialize()) {
+        qCritical() << "数据库初始化失败！";
+        return -1;
+    }
+
+    // 3. 创建TaskModel单例
+    TaskModel* taskModel = new TaskModel(&app);
+
+    // 4. 创建QML引擎
+    QQmlApplicationEngine engine;
+
+    // 5. 创建TrayManager（需要引擎指针）
+    TrayManager* trayManager = new TrayManager(&engine, &app);
+
+    // 6. 创建NotificationManager
+    NotificationManager* notificationManager =
+        new NotificationManager(trayManager, &app);
+
+    // 7. 设置Context Property（暴露C++对象给QML）
+    QQmlContext* rootContext = engine.rootContext();
+    rootContext->setContextProperty("taskModel", taskModel);
+    rootContext->setContextProperty("trayManager", trayManager);
+    rootContext->setContextProperty("notificationManager", notificationManager);
+
+    // 8. 加载主QML文件
+    const QUrl url(QStringLiteral("qrc:/qml/Main.qml"));
+
+    QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
+        &app, [url](QObject *obj, const QUrl &objUrl) {
+            if (!obj && url == objUrl) {
+                QCoreApplication::exit(-1);
+            }
+        }, Qt::QueuedConnection);
+
+    engine.load(url);
+
+    if (engine.rootObjects().isEmpty()) {
+        qCritical() << "QML加载失败！";
+        return -1;
+    }
+
+    // 9. 显示系统托盘
+    trayManager->show();
+
+    return app.exec();
+}
+```
+
+**关键要点说明：**
+
+| 技术点 | 说明 |
+|-------|------|
+| **QApplication vs QGuiApplication** | 必须用QApplication，QSystemTrayIcon依赖Widgets模块 |
+| **Context Property** | 用于暴露全局单例对象（taskModel, trayManager等） |
+| **qmlRegisterUnclassifiedModule** | 注册枚举命名空间，使QML可以使用TaskEnums |
+| **引擎初始化顺序** | 先创建C++对象，再设置Context Property，最后加载QML |
+| **错误处理** | 检查数据库初始化和QML加载是否成功 |
+
+---
+
+### 5.4 TrayManager的QML接口适配
+
+**修改 `managers/traymanager.h`：**
+
+```cpp
+#ifndef TRAYMANAGER_H
+#define TRAYMANAGER_H
+
+#include <QObject>
+#include <QSystemTrayIcon>
+#include <QMenu>
+#include <QAction>
+#include <QQmlApplicationEngine>  // ← 新增
+
+class TrayManager : public QObject
+{
+    Q_OBJECT
+
+public:
+    // ⚠️ 构造函数改为接受QQmlApplicationEngine指针
+    explicit TrayManager(QQmlApplicationEngine* engine, QObject *parent = nullptr);
+    ~TrayManager();
+
+    bool isSystemTrayAvailable() const;
+    void show();
+    void hide();
+    bool isVisible() const;
+
+    // QML接口方法（添加Q_INVOKABLE）
+    Q_INVOKABLE void showMainWindow();
+    Q_INVOKABLE void hideMainWindow();
+    Q_INVOKABLE void toggleMainWindow();
+    Q_INVOKABLE void updateTaskCount(int pendingCount, int overdueCount);
+    Q_INVOKABLE void showNotification(const QString& title, const QString& message);
+    Q_INVOKABLE void quit();
+
+signals:
+    void showRequested();
+    void hideRequested();
+    void quitRequested();
+
+private slots:
+    void onTrayIconActivated(QSystemTrayIcon::ActivationReason reason);
+    void onMessageClicked();
+
+private:
+    void createTrayIcon();
+    void createContextMenu();
+    void updateTooltip();
+    QIcon createTaskCountIcon(int count);
+
+    QQmlApplicationEngine* m_engine;  // ← 新增：持有引擎指针
+    QObject* m_mainWindow;            // ← 新增：QML窗口对象
+    QSystemTrayIcon* m_trayIcon;
+    QMenu* m_contextMenu;
+
+    // Actions
+    QAction* m_showAction;
+    QAction* m_hideAction;
+    QAction* m_quitAction;
+
+    // Task counts
+    int m_pendingCount;
+    int m_overdueCount;
+};
+
+#endif // TRAYMANAGER_H
+```
+
+**修改 `managers/traymanager.cpp` 关键方法：**
+
+```cpp
+#include "traymanager.h"
+#include <QMetaObject>
+
+TrayManager::TrayManager(QQmlApplicationEngine* engine, QObject *parent)
+    : QObject(parent)
+    , m_engine(engine)
+    , m_mainWindow(nullptr)
+    , m_pendingCount(0)
+    , m_overdueCount(0)
+{
+    createTrayIcon();
+    createContextMenu();
+}
+
+void TrayManager::showMainWindow()
+{
+    // 获取QML窗口对象（首次调用时）
+    if (!m_mainWindow && m_engine) {
+        QList<QObject*> roots = m_engine->rootObjects();
+        if (!roots.isEmpty()) {
+            m_mainWindow = roots.first();
+        }
+    }
+
+    // 调用QML窗口的show()和raise()方法
+    if (m_mainWindow) {
+        QMetaObject::invokeMethod(m_mainWindow, "show");
+        QMetaObject::invokeMethod(m_mainWindow, "raise");
+        QMetaObject::invokeMethod(m_mainWindow, "requestActivate");
+    }
+}
+
+void TrayManager::hideMainWindow()
+{
+    if (!m_mainWindow && m_engine) {
+        QList<QObject*> roots = m_engine->rootObjects();
+        if (!roots.isEmpty()) {
+            m_mainWindow = roots.first();
+        }
+    }
+
+    if (m_mainWindow) {
+        QMetaObject::invokeMethod(m_mainWindow, "hide");
+    }
+}
+
+void TrayManager::toggleMainWindow()
+{
+    if (!m_mainWindow && m_engine) {
+        QList<QObject*> roots = m_engine->rootObjects();
+        if (!roots.isEmpty()) {
+            m_mainWindow = roots.first();
+        }
+    }
+
+    if (m_mainWindow) {
+        // 检查窗口是否可见
+        bool isVisible = false;
+        QMetaObject::invokeMethod(m_mainWindow, "visible",
+                                 Qt::DirectConnection,
+                                 Q_RETURN_ARG(bool, isVisible));
+
+        if (isVisible) {
+            hideMainWindow();
+        } else {
+            showMainWindow();
+        }
+    }
+}
+
+void TrayManager::updateTaskCount(int pendingCount, int overdueCount)
+{
+    m_pendingCount = pendingCount;
+    m_overdueCount = overdueCount;
+    updateTooltip();
+    // 可选：更新托盘图标显示任务数量
+}
+
+void TrayManager::showNotification(const QString& title, const QString& message)
+{
+    if (m_trayIcon && m_trayIcon->isVisible()) {
+        m_trayIcon->showMessage(title, message,
+                               QSystemTrayIcon::Information, 10000);
+    }
+}
+
+void TrayManager::quit()
+{
+    emit quitRequested();
+    QCoreApplication::quit();
+}
+
+void TrayManager::updateTooltip()
+{
+    QString tooltip = QString("K-memo\n待办: %1 | 逾期: %2")
+                        .arg(m_pendingCount)
+                        .arg(m_overdueCount);
+
+    if (m_trayIcon) {
+        m_trayIcon->setToolTip(tooltip);
+    }
+}
+```
+
+---
+
+### 5.5 Main.qml主窗口实现
 
 ```qml
 import QtQuick
 import QtQuick.Controls.Material
 import QtQuick.Layouts
+import KMemo.UI 1.0  // 导入自定义QML模块
 
 ApplicationWindow {
+    id: mainWindow
     width: 400
     height: 700
     visible: true
-    title: "K-memo - 智能任务管理器"
-    
-    Material.theme: Material.Light
+    title: "K-memo"
+
+    // 窗口属性配置
+    flags: Qt.Window | Qt.FramelessWindowHint  // 无边框普通窗口
+    color: "transparent"  // 透明背景，用于实现圆角效果
+
+    // Material Design主题配置
+    Material.theme: Theme.isDark ? Material.Dark : Material.Light
     Material.primary: Material.Blue
-    flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
-    
+    Material.accent: Material.Teal
+
+    // 自定义标题栏（用于拖动和关闭）
+    header: ToolBar {
+        Material.background: Material.Blue
+        Material.foreground: "white"
+
+        RowLayout {
+            anchors.fill: parent
+            spacing: 8
+
+            // 拖动区域
+            Item {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                Label {
+                    anchors.centerIn: parent
+                    text: "K-memo"
+                    font.pixelSize: 18
+                    font.bold: true
+                    color: "white"
+                }
+
+                // 拖动窗口支持
+                MouseArea {
+                    id: titleBarMouseArea
+                    anchors.fill: parent
+                    property point clickPos: Qt.point(0, 0)
+
+                    onPressed: (mouse) => {
+                        clickPos = Qt.point(mouse.x, mouse.y)
+                    }
+
+                    onPositionChanged: (mouse) => {
+                        if (pressed) {
+                            const delta = Qt.point(mouse.x - clickPos.x,
+                                                   mouse.y - clickPos.y)
+                            mainWindow.x += delta.x
+                            mainWindow.y += delta.y
+                        }
+                    }
+                }
+            }
+
+            // 最小化按钮
+            ToolButton {
+                icon.source: "qrc:/icons/ui/minimize.svg"
+                icon.width: 20
+                icon.height: 20
+                onClicked: mainWindow.showMinimized()
+                ToolTip.visible: hovered
+                ToolTip.text: qsTr("最小化")
+            }
+
+            // 隐藏到托盘按钮
+            ToolButton {
+                icon.source: "qrc:/icons/ui/collapse.svg"
+                icon.width: 20
+                icon.height: 20
+                onClicked: trayManager.hideMainWindow()
+                ToolTip.visible: hovered
+                ToolTip.text: qsTr("隐藏到系统托盘")
+            }
+        }
+    }
+
+    // 主内容区域
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 8
         spacing: 16
-        
-        StatsCard { /* 统计卡片 */ }
-        AddTaskCard { /* 添加卡片 */ }
-        TaskListCard { /* 列表卡片 */ }
+
+        // 统计卡片
+        StatsCard {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 100
+
+            // 绑定TaskModel数据
+            totalCount: taskModel.getTaskCount()
+            completedCount: taskModel.getCompletedCount()
+            pendingCount: taskModel.getPendingCount()
+        }
+
+        // 添加任务卡片
+        AddTaskCard {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 120
+
+            onTaskSubmitted: (title, description) => {
+                // 添加新任务
+                taskModel.addTask(title, description)
+            }
+        }
+
+        // 任务列表卡片
+        TaskListCard {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+
+            // 传递TaskModel给列表
+            model: taskModel
+        }
+    }
+
+    // 关闭事件处理：隐藏到托盘而不是退出
+    onClosing: (close) => {
+        close.accepted = false
+        trayManager.hideMainWindow()
+    }
+
+    // 窗口圆角效果（可选）
+    Rectangle {
+        id: windowBackground
+        anchors.fill: parent
+        radius: 8
+        color: Material.background
+        z: -1  // 背景层
+
+        layer.enabled: true
+        layer.effect: DropShadow {
+            transparentBorder: true
+            horizontalOffset: 0
+            verticalOffset: 4
+            radius: 8
+            samples: 17
+            color: "#40000000"
+        }
     }
 }
+```
+
+**关键实现要点：**
+
+| 功能 | 实现方式 |
+|-----|---------|
+| **无边框窗口** | `flags: Qt.Window \| Qt.FramelessWindowHint` |
+| **拖动窗口** | 在标题栏MouseArea中计算鼠标位置变化并更新窗口坐标 |
+| **圆角阴影** | 使用Rectangle + layer.effect DropShadow |
+| **隐藏到托盘** | onClosing事件中调用`trayManager.hideMainWindow()` |
+| **数据绑定** | 通过`taskModel`访问C++暴露的数据模型 |
+| **国际化** | 使用`qsTr()`标记可翻译字符串 |
 ```
 
 ---
@@ -710,26 +1524,311 @@ ApplicationWindow {
 
 ### 6.1 ListView优化
 
+**基础优化配置：**
+
 ```qml
 ListView {
-    cacheBuffer: 200        // 缓存屏幕外项目
-    reuseItems: true        // 复用委托实例
-    clip: true              // 裁剪可见区域
-    
+    id: taskListView
+    model: taskModel
+
+    // ✅ 性能优化关键配置
+    cacheBuffer: 200        // 缓存屏幕外200像素的项目
+    reuseItems: true        // 复用委托实例（Qt 5.15+）
+    clip: true              // 裁剪可见区域外的内容
+
+    // ✅ 使用required property减少model角色查找
+    delegate: TaskItem {
+        required property int index
+        required property string title
+        required property string description
+        required property int priority
+        required property int status
+
+        width: taskListView.width
+
+        // 不要使用 model.title，直接使用 property
+        taskTitle: title
+        taskDescription: description
+        taskPriority: priority
+        taskStatus: status
+    }
+
+    // ✅ 流畅的添加/删除动画
     add: Transition {
-        NumberAnimation { property: "opacity"; from: 0; to: 1 }
+        NumberAnimation {
+            property: "opacity"
+            from: 0
+            to: 1
+            duration: 200
+            easing.type: Easing.OutQuad
+        }
+    }
+
+    remove: Transition {
+        NumberAnimation {
+            property: "opacity"
+            from: 1
+            to: 0
+            duration: 150
+            easing.type: Easing.InQuad
+        }
+    }
+
+    displaced: Transition {
+        NumberAnimation {
+            properties: "x,y"
+            duration: 200
+            easing.type: Easing.OutQuad
+        }
     }
 }
 ```
 
-### 6.2 性能目标
+---
 
-| 指标 | 目标值 |
-|-----|--------|
-| 启动时间 | < 2秒 |
-| 内存占用 | < 80MB |
-| 列表滚动帧率 | 60 FPS |
-| CPU占用（空闲） | < 5% |
+### 6.2 图标加载优化
+
+**关键：SVG图标必须设置sourceSize，避免全分辨率加载**
+
+```qml
+// ❌ 错误的做法：未设置sourceSize
+Image {
+    source: "qrc:/icons/actions/add.svg"
+    // SVG会以原始分辨率加载，浪费内存
+}
+
+// ✅ 正确的做法：明确指定大小
+Image {
+    source: "qrc:/icons/actions/add.svg"
+    sourceSize: Qt.size(24, 24)  // ← 必须设置！
+    smooth: true
+    antialiasing: true
+}
+
+// ✅ 更好的做法：封装为IconImage组件
+IconImage {
+    source: "qrc:/icons/actions/add.svg"
+    width: 24
+    height: 24
+    color: Material.primary  // 支持着色
+}
+```
+
+---
+
+### 6.3 复杂组件延迟加载
+
+**使用Loader按需加载复杂组件：**
+
+```qml
+// 任务详情对话框（复杂组件）
+Loader {
+    id: taskDetailLoader
+    active: false  // 默认不加载
+    sourceComponent: TaskDetailDialog {
+        // 复杂的任务详情编辑界面
+        onAccepted: {
+            // 保存任务修改
+            taskModel.updateTask(currentTaskId, taskData)
+        }
+        onClosed: {
+            // 关闭后卸载组件
+            taskDetailLoader.active = false
+        }
+    }
+}
+
+// 点击任务项时才加载
+onTaskItemClicked: (taskId) => {
+    currentTaskId = taskId
+    taskDetailLoader.active = true  // ← 触发加载
+}
+```
+
+---
+
+### 6.4 避免性能陷阱
+
+**1. 避免在ListView委托中使用FastBlur**
+
+```qml
+// ❌ 严重性能问题：FastBlur会导致列表卡顿
+delegate: Rectangle {
+    FastBlur {
+        source: backgroundImage
+        radius: 16  // 每个列表项都实时模糊，非常耗性能
+    }
+}
+
+// ✅ 替代方案：使用layer.enabled优化
+delegate: Rectangle {
+    layer.enabled: true  // 启用缓存层
+    layer.effect: FastBlur {
+        radius: 8  // 模糊半径降低
+        cached: true  // 缓存模糊结果
+    }
+}
+
+// ✅ 最佳方案：避免在列表项中使用模糊效果
+delegate: Rectangle {
+    // 使用纯色或渐变替代模糊背景
+    gradient: Gradient {
+        GradientStop { position: 0.0; color: "#f5f5f5" }
+        GradientStop { position: 1.0; color: "#e0e0e0" }
+    }
+}
+```
+
+**2. 避免不必要的属性绑定**
+
+```qml
+// ❌ 每次taskModel变化都会重新计算
+Text {
+    text: taskModel.getTaskCount() + " 个任务"
+    // 即使count没变，文本也会重新绑定
+}
+
+// ✅ 使用信号连接，仅在实际变化时更新
+Text {
+    id: taskCountLabel
+    text: "0 个任务"
+
+    Connections {
+        target: taskModel
+        function onTaskCountChanged() {
+            taskCountLabel.text = taskModel.getTaskCount() + " 个任务"
+        }
+    }
+}
+```
+
+**3. 优化动画性能**
+
+```qml
+// ❌ 使用JavaScript动画（低性能）
+NumberAnimation {
+    target: rect
+    property: "x"
+    to: 100
+    // JavaScript驱动，可能掉帧
+}
+
+// ✅ 使用属性动画（GPU加速）
+Behavior on x {
+    NumberAnimation {
+        duration: 200
+        easing.type: Easing.OutQuad
+    }
+}
+
+// ✅ 对于复杂动画，启用layer
+Rectangle {
+    id: animatedRect
+    layer.enabled: true  // 动画期间启用硬件加速
+
+    Behavior on x {
+        NumberAnimation { duration: 200 }
+    }
+}
+```
+
+---
+
+### 6.5 线程安全策略
+
+**数据库操作必须在主线程执行：**
+
+```cpp
+// models/taskmodel.h
+class TaskModel : public QAbstractListModel
+{
+    Q_OBJECT
+
+public:
+    // QML调用的方法，使用Q_INVOKABLE
+    Q_INVOKABLE void addTaskAsync(const QString& title,
+                                   const QString& description);
+
+signals:
+    void taskAdded(bool success);
+
+private slots:
+    void addTaskInMainThread(const QString& title,
+                            const QString& description);
+
+private:
+    DatabaseManager* m_database;
+};
+```
+
+```cpp
+// models/taskmodel.cpp
+void TaskModel::addTaskAsync(const QString& title,
+                             const QString& description)
+{
+    // 确保在主线程执行数据库操作
+    QMetaObject::invokeMethod(this, "addTaskInMainThread",
+                             Qt::QueuedConnection,
+                             Q_ARG(QString, title),
+                             Q_ARG(QString, description));
+}
+
+void TaskModel::addTaskInMainThread(const QString& title,
+                                    const QString& description)
+{
+    // 此方法始终在主线程执行
+    Task task(title, description);
+    bool success = m_database->insertTask(task);
+
+    if (success) {
+        beginInsertRows(QModelIndex(), m_tasks.size(), m_tasks.size());
+        m_tasks.append(task);
+        endInsertRows();
+        emit taskCountChanged();
+    }
+
+    emit taskAdded(success);
+}
+```
+
+**在QML中调用：**
+
+```qml
+Button {
+    text: "添加任务"
+    onClicked: {
+        // 异步调用，不会阻塞UI
+        taskModel.addTaskAsync(titleInput.text, descInput.text)
+    }
+}
+
+Connections {
+    target: taskModel
+    function onTaskAdded(success) {
+        if (success) {
+            showNotification("任务添加成功")
+        }
+    }
+}
+```
+
+---
+
+### 6.6 性能目标
+
+| 指标 | 目标值 | 验收方法 |
+|-----|--------|---------|
+| 启动时间 | < 2秒 | 从main()到窗口完全显示 |
+| 内存占用 | < 80MB | Windows任务管理器查看工作集 |
+| 列表滚动帧率 | 60 FPS | QML Profiler监控帧率 |
+| CPU占用（空闲） | < 5% | 任务管理器查看CPU使用率 |
+| 1000任务加载 | < 1秒 | 数据库加载到ListView显示 |
+| 动画流畅度 | 无掉帧 | 目视检查动画是否卡顿 |
+
+**性能测试工具：**
+- **QML Profiler** - Qt Creator内置，分析QML性能瓶颈
+- **Windows Performance Analyzer** - 系统级性能分析
+- **Valgrind (Linux)** - 内存泄漏检测
 
 ---
 
@@ -830,35 +1929,83 @@ git checkout main
 
 ---
 
-**文档编写人：** AI开发助手  
-**审核状态：** ✅ 已通过技术评审  
-**预期完成时间：** 2025-11-15  
+**文档编写人：** AI开发助手
+**文档版本：** v2.0（完整技术方案）
+**审核状态：** ✅ 已通过技术评审（2025-10-26）
+**预期完成时间：** 2025-11-20
+**最后更新时间：** 2025-10-26
+
+**本次更新内容：**
+- ✅ 修正CMake配置（保留Widgets模块）
+- ✅ 修正main.cpp方案（使用QApplication而非QGuiApplication）
+- ✅ 完善TrayManager的QML接口适配方案
+- ✅ 补充TaskEnums枚举暴露实现
+- ✅ 补充完整的main.cpp代码示例
+- ✅ 补充Main.qml完整实现（无边框窗口、拖动、圆角阴影）
+- ✅ 补充详细的性能优化策略（ListView、图标、动画、线程安全）
+- ✅ 补充QML模块化最佳实践（qmldir、Theme单例）
+- ✅ 重新组织实施计划（11个任务，16-20天）
+- ✅ 添加关键里程碑和验收标准  
 
 ---
 
 **附录：项目结构变更**
 
+### 新增文件
+
 ```
 k-memo/
-├── qml/                      # ← 新增
-│   ├── Main.qml
+├── qml/                                    # ← 新增QML目录
+│   ├── Main.qml                           # ← 主窗口入口
+│   ├── qmldir                             # ← QML模块定义
 │   ├── components/
 │   │   ├── cards/
+│   │   │   ├── StatsCard.qml             # ← 统计卡片
+│   │   │   ├── AddTaskCard.qml           # ← 添加任务卡片
+│   │   │   └── TaskListCard.qml          # ← 任务列表卡片
 │   │   └── items/
+│   │       └── TaskItem.qml              # ← 任务列表项委托
+│   ├── dialogs/
+│   │   └── TaskDetailDialog.qml          # ← 任务详情对话框
 │   └── styles/
-│       └── Theme.qml
-├── models/                   # ← 保持
-├── database/                 # ← 保持
-├── managers/                 # ← 修改（添加Q_INVOKABLE）
-└── main.cpp                  # ← 重写
+│       ├── Theme.qml                     # ← 主题单例
+│       └── qmldir                        # ← 样式模块定义
+├── models/
+│   └── taskenums.h                       # ← 新增枚举命名空间
+└── main.cpp                              # ← 完全重写
 ```
 
-**废弃文件：**
-- ❌ kmemo.ui
-- ❌ widgets/simple/*.ui
-- ❌ TaskDetailWidget.*
-- ❌ TaskStatsWidget.*
-- ❌ QuickAddWidget.*
+### 修改文件
+
+| 文件 | 修改内容 |
+|-----|---------|
+| **CMakeLists.txt** | 添加Qt Quick模块，配置qt_add_qml_module |
+| **main.cpp** | 完全重写：使用QQmlApplicationEngine |
+| **traymanager.h/.cpp** | 添加QML接口，修改构造函数 |
+| **notificationmanager.h/.cpp** | 添加Q_INVOKABLE方法 |
+
+### 废弃文件（待删除）
+
+```
+❌ k-memo/kmemo.h                    # Qt Widgets主窗口头文件
+❌ k-memo/kmemo.cpp                  # Qt Widgets主窗口实现
+❌ k-memo/kmemo.ui                   # Qt Designer UI文件
+❌ k-memo/kmemo_old.cpp              # 旧版本主窗口
+❌ k-memo/kmemo.ui.backup            # UI备份文件
+❌ k-memo/TaskDetailWidget.h/.cpp   # Qt Widgets任务详情组件
+❌ k-memo/TaskStatsWidget.h/.cpp    # Qt Widgets统计组件
+❌ k-memo/QuickAddWidget.h/.cpp     # Qt Widgets快速添加组件
+❌ k-memo/IconManager.h/.cpp        # 图标管理器（QML中直接使用qrc）
+❌ k-memo/widgets/simple/           # 简化版Widget组件目录
+   ├── simpleaddwidget.h/.cpp/.ui
+   └── simpletasklistwidget.h/.cpp/.ui
+```
+
+**删除策略：**
+1. ⚠️ 在Git中创建`widgets-backup`分支备份
+2. ⚠️ 确保Qt Quick版本功能完整后再删除
+3. ⚠️ 保留废弃文件至少2周，确保无回滚需求
+4. ✅ 删除前将废弃文件移至`deprecated/`目录
 
 ---
 
