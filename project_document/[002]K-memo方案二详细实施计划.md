@@ -29,6 +29,8 @@ target_link_libraries(k-memo PRIVATE
     Qt6::Sql
 )
 ```
+
+
 ## 详细任务分解
 
 ### 阶段一：基础架构搭建（3天）
