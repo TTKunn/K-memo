@@ -24,6 +24,7 @@ find_package(Qt6 REQUIRED COMPONENTS
     Widgets 
     Sql 
 )
+
 target_link_libraries(k-memo PRIVATE 
     Qt6::Widgets 
     Qt6::Sql
