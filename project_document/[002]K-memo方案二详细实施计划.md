@@ -12,6 +12,7 @@
 ## 技术方案总览
 
 ### 核心技术选择
+
 - **数据存储：** SQLite数据库
 - **通知系统：** QSystemTrayIcon + 后期可扩展Windows Toast
 - **架构模式：** 标准MVC模式
