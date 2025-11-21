@@ -11,6 +11,7 @@
 #include <QTimer>
 #include "models/task.h"
 
+
 class TaskModel;
 
 class TaskStatsWidget : public QWidget
